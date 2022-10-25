@@ -51,25 +51,26 @@ let eventTracker = (function() {
 	        	let responseBody = decoder.decode(responseBytes, { stream: true });
 	        	responseBody = formatResponseBody(responseBody);
 
-	        	//console.log(webEvent.url);
-	        	//console.log(responseBody);
 	        	for (let interface of responseBody.methods) {
 	        		// look for song informations in response
 	        		if(interface.interface == "PlaybackInterface.v1_0.SetMediaMethod") {
-						// create song object
-						var song = {
-							mediaId: interface.metadata.mediaId,
-							title: interface.metadata.title,
-							artistName: interface.metadata.artistName,
-							artwork: interface.metadata.artwork,
-							albumName: interface.metadata.albumName
-						}
-						// store song information in storage
-						browser.storage.sync.set({
-							amazonMusicCurrentSong: song,
-							currentAmazonMusicTrackId: interface.metadata.mediaId
+	        			browser.storage.sync.get("amazonMusicHelperShowNotifications").then((showNotifications) => {
+							// create song object
+							var song = {
+								mediaId: interface.metadata.mediaId,
+								title: interface.metadata.title,
+								artistName: interface.metadata.artistName,
+								artwork: interface.metadata.artwork,
+								albumName: interface.metadata.albumName
+							}
+							// store song information in storage
+							browser.storage.sync.set({ amazonMusicCurrentSong: song });
+							
+							if(showNotifications) {
+								showSongNotification(song);
+							}
 						});
-						showSongNotification();
+						enableBrowserAction();
 	        		}
 	        	}
 	        };
@@ -124,20 +125,39 @@ let eventTracker = (function() {
         browser.storage.sync.set({
             amazonRequestHeaders: getFilteredRequestHeaders(allRequestHeaders.get(webEvent.requestIdEnhanced).requestHeaders)
         });
-        // get request body
-        var requestBody = allRequestBodys.get(webEvent.requestIdEnhanced);
-        // try to get track id (ASIN) from request body and save it to storage
-        var audioTrackASIN = (requestBody.metricsInfo != undefined && requestBody.metricsInfo.audioTrackASIN != undefined) ? requestBody.metricsInfo.audioTrackASIN : undefined;
-        if (audioTrackASIN != undefined) {
-            //console.log('Saved amazon music track asin: ' + allRequestBodys.get(webEvent.requestIdEnhanced).metricsInfo.audioTrackASIN);
-            browser.storage.sync.set({
-                currentAmazonMusicTrackId: audioTrackASIN
-            })
-        };
-        // clean up
-        allRequestHeaders.delete(webEvent.requestIdEnhanced);
-        allRequestBodys.delete(webEvent.requestIdEnhanced);
-        requestIdRedirectCount.delete(webEvent.requestId);
+
+        browser.storage.sync.get("amazonMusicCurrentSong").then((song) => {
+        	song = song.amazonMusicCurrentSong;
+	        // get request body
+	        var requestBody = allRequestBodys.get(webEvent.requestIdEnhanced);
+	        // try to get track id (ASIN) from request body and save it to storage
+	        var audioTrackASIN = (requestBody.metricsInfo != undefined && requestBody.metricsInfo.audioTrackASIN != undefined) ? requestBody.metricsInfo.audioTrackASIN : undefined;
+	        if (audioTrackASIN != undefined) {
+	            //console.log('Saved amazon music track asin: ' + allRequestBodys.get(webEvent.requestIdEnhanced).metricsInfo.audioTrackASIN);
+	            if (song == undefined) {
+	            	song = {
+	            		mediaId: audioTrackASIN,
+	            		title: '',
+	            		artistName: '',
+	            		albumName: '',
+	            		artwork: ''
+	            	};
+	            	browser.storage.sync.set({ amazonMusicCurrentSong: song });
+	            } else if (song != undefined && song.mediaId != audioTrackASIN) {
+					song.mediaId = audioTrackASIN
+					song.title = "";
+					song.albumName = "";
+					song.artistName = "";
+					song.artwork = "";
+					browser.storage.sync.set({ amazonMusicCurrentSong: song });
+				}
+	        };
+
+	        // clean up
+	        allRequestHeaders.delete(webEvent.requestIdEnhanced);
+	        allRequestBodys.delete(webEvent.requestIdEnhanced);
+	        requestIdRedirectCount.delete(webEvent.requestId);
+        });
     };
 
     let formatRequestBody = function(webEvent) {

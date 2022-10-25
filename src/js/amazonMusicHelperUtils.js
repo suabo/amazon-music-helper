@@ -1,6 +1,13 @@
+/**
+ * Error handling
+ */
 function onError(e) {
     console.error(e);
 }
+
+/**
+ * Misc helper
+ */
 
 function getManifestDetails() {
 	var customManifestDetails;
@@ -8,7 +15,8 @@ function getManifestDetails() {
         let manifest = browser.runtime.getManifest();
         if (manifest) {
             customManifestDetails = {};
-            customManifestDetails.title = `${manifest.browser_action.default_title} (version : ${manifest.version})`;
+            customManifestDetails.title = `${manifest.browser_action.default_title}`;
+            customManifestDetails.longTitle = `${manifest.browser_action.default_title} (version : ${manifest.version})`;
         }
     }
     return customManifestDetails;
@@ -57,6 +65,17 @@ function md5(inputString) {
     return rh(a)+rh(b)+rh(c)+rh(d);
 }
 
+function appendBuffer(buffer1, buffer2) {
+    var tmp = new Uint8Array(buffer1.byteLength + buffer2.byteLength);
+    tmp.set(new Uint8Array(buffer1), 0);
+    tmp.set(new Uint8Array(buffer2), buffer1.byteLength);
+    return tmp.buffer;
+}
+
+/**
+ * Request & Response
+ */
+
 function getFilteredRequestHeaders(requestHeaders) {
 	let amazonRequestHeaders = [];
 	requestHeaders.forEach((header) => {
@@ -73,27 +92,23 @@ function createCustomAmazonHeader() {
 	// create x-amzn-request-id header
 	let hash = md5(Date.now());
 	let requestId = hash.slice(0, 8) + '-' + hash.slice(8, 12) + '-' + hash.slice(12, 16) + '-' + hash.slice(16, 20) + '-' + hash.slice(20);
-	return { requestid: requestId, timestamp: Date.now() };
+	return { requestId: requestId, timestamp: Date.now() };
 }
 
 /** 
  * Notifications 
  */
 
-function showSongNotification() {
-    browser.storage.sync.get([
-    	"amazonMusicCurrentSong",
-        "amazonMusicHelperShowNotifications"
-    ], function(items) {
-    	if(items.amazonMusicHelperShowNotifications) {
-	        browser.notifications.create('amazonMusic-NextSong-' + Date.now(), {
-			    type: "basic",
-			    iconUrl: items.amazonMusicCurrentSong.artwork,
-			    title: `${items.amazonMusicCurrentSong.title}`,
-			    message: `${items.amazonMusicCurrentSong.artistName} ${items.amazonMusicCurrentSong.albumName}`,
-	    	});
-	    }
-    });
+async function showSongNotification(song) {
+	if(song == undefined) {
+		song = await browser.storage.sync.get("amazonMusicCurrentSong");
+	}
+    browser.notifications.create('amazonMusic-NextSong-' + Date.now(), {
+	    type: "basic",
+	    iconUrl: song.artwork,
+	    title: `${song.title}`,
+	    message: `${song.artistName} ${song.albumName}`,
+	});
 }
 
 function showAddedToPlaylistNotification(playlist) {
@@ -110,11 +125,4 @@ function showAddedToPlaylistNotification(playlist) {
 		  	});
 		}
     });
-}
-
-function appendBuffer(buffer1, buffer2) {
-    var tmp = new Uint8Array(buffer1.byteLength + buffer2.byteLength);
-    tmp.set(new Uint8Array(buffer1), 0);
-    tmp.set(new Uint8Array(buffer2), buffer1.byteLength);
-    return tmp.buffer;
 }
