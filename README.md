@@ -19,7 +19,9 @@ Another request is sent if a song is added to a playlist.
 
 ## Install
 
-Im working on getting this extension into addons.mozilla.org and chrome.google.com/webstore.
+[Add to Firefox](https://addons.mozilla.org/de/firefox/addon/amazon-music-helper/)
+
+Add to Chrome is coming soon
 
 
 ## Credits
