@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <style>
+    .options {
+      margin-bottom: 10px;
+    }
+    #status {
+      color: darkgreen;
+    }
+  </style>
+</head>
+
+<body>
+  <form>
+    <div style="padding: 0 0 15px 0;">
+      <h3>Amazon Music Helper</h3>
+      <div class="option">
+      	<label>Amazon Music default playlist:</label>
+      	<select id="amazonMusicHelperDefaultPlaylist" disabled>
+      	</select>
+      </div>
+
+      <div class="option">
+        <label>Show notifications:</label>
+        <input type="checkbox" id="amazonMusicHelperShowNotifications">
+      </div>
+
+      <div class="option">
+        <button id="save" type="button">Save</button>
+        <div id="status" style="display: none;">Options saved.</div>
+      </div>
+    </div>
+  </form>
+
+  <script type="text/javascript" src="/src/js/amazonMusicHelperConstants.js"></script>
+  <script type="text/javascript" src="/src/js/amazonMusicHelperUtils.js"></script>
+  <script type="text/javascript" src="/src/js/amazonMusicHelperOptions.js"></script>
+  <script type="text/javascript" src="/src/js/amazonMusicHelperRequests.js"></script>
+</body>
+
+</html>
